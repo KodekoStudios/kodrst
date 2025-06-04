@@ -1,0 +1,41 @@
+{
+  "name": "kodrst",
+  "version": "0.1.0",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "kodrst",
+    "triples": {
+      "additional": [
+        "aarch64-apple-darwin",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-unknown-linux-musl",
+        "aarch64-pc-windows-msvc",
+        "x86_64-unknown-linux-musl"
+      ]
+    }
+  },
+  "license": "AGPL-3.0-only",
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.4",
+    "@types/bun": "^1.2.15",
+    "@types/terminal-kit": "^2.5.7",
+    "discord-api-types": "^0.38.10",
+    "kodkord": "^1.2.0",
+    "mitata": "^1.0.34",
+    "terminal-kit": "^3.1.2"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "sh build.sh",
+    "build:debug": "napi build --platform",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "ava",
+    "universal": "napi universal",
+    "version": "napi version"
+  },
+  "packageManager": "bun@1.2.15"
+}

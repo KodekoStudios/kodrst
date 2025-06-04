@@ -1,0 +1,28 @@
+[package]
+edition = "2024"
+name    = "kodrst"
+version = "0.0.1"
+license = "AGPL-3.0-only"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rustls-native-certs = "0.8.1"
+napi         = { version = "2.12.2", default-features = false, features = ["napi6", "serde-json", "tokio_rt"] }
+napi-derive  = { version = "2.12.2", default-features = false }
+tokio        = { version = "1.45.0", features = ["full"] }
+tokio-rustls = { version = "0.26.2", default-features = false, features = ["logging", "tls12", "ring"] }
+async-compat = "*"
+serde_json   = "*"
+rustc-hash   = "*"
+kroos        = "*"
+aahc         = "*"
+
+[build-dependencies]
+napi-build = "2.2.0"
+
+[profile.release]
+strip     = "symbols"
+lto       = true
+opt-level = 3
