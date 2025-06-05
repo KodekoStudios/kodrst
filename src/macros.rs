@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! reqf {
+macro_rules! required_field {
     ($obj:expr, $key:literal, $ty:ty) => {
         $obj.get::<&str, $ty>($key)?
             .ok_or_else(|| napi::Error::from_reason(concat!("Missing `", $key, "` field")))
@@ -7,14 +7,14 @@ macro_rules! reqf {
 }
 
 #[macro_export]
-macro_rules! optf {
+macro_rules! optional_field {
     ($obj:expr, $key:literal, $ty:ty) => {
         $obj.get::<&str, $ty>($key)
     };
 }
 
 #[macro_export]
-macro_rules! napi_map {
+macro_rules! napi_map_err {
     ($expr:expr) => {
         $expr.map_err(|e| napi::Error::from_reason(e.to_string()))
     };

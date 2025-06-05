@@ -1,4 +1,9 @@
-pub mod response;
-pub mod request;
-pub mod bucket;
-pub mod file;
+mod response;
+mod request;
+mod bucket;
+mod file;
+
+pub use response::*;
+pub use request::*;
+pub use bucket::*;
+pub use file::*;

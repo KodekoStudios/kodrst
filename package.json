@@ -1,6 +1,6 @@
 {
   "name": "kodrst",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -17,6 +17,7 @@
   },
   "license": "AGPL-3.0-only",
   "devDependencies": {
+    "@discordjs/rest": "^2.5.0",
     "@napi-rs/cli": "^2.18.4",
     "@types/bun": "^1.2.15",
     "@types/terminal-kit": "^2.5.7",

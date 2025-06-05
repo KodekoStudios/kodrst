@@ -1,21 +1,21 @@
-use async_compat::CompatExt as _;
-use std::{error::Error, pin::Pin};
+use crate::{macros::usize_to_str_bytes, FlakeExtension, structs::*};
 
-use rustls_native_certs::load_native_certs;
 use tokio_rustls::{rustls::{ClientConfig, RootCertStore}, TlsConnector};
 use tokio::{io::{copy, AsyncWriteExt, BufReader}, net::TcpStream};
 use aahc::{receive_headers, send_headers, Header};
-
-use crate::{macros::usize_to_str_bytes, structs::{request::Request, response::Response}, FlakeExtension};
+use rustls_native_certs::load_native_certs;
+use std::{error::Error, pin::Pin};
+use async_compat::CompatExt as _;
 use kroos::Flake;
 
 pub struct Client {
+    pub authorization: Flake<str>  ,
+    pub user_agent   : Flake<str>  ,
     pub connector    : TlsConnector,
-    pub authorization: Flake<str>,
-    pub user_agent   : Flake<str>,
 }
 
 impl Client {
+    #[inline(always)]
     pub fn new(authorization: Flake<str>, user_agent: Flake<str>) -> Result<Self, Box<dyn Error>> {
         let mut roots = RootCertStore::empty();
         for cert in load_native_certs().certs {
@@ -32,7 +32,7 @@ impl Client {
         })
     }
 
-    pub async fn send(&self, request: Request) -> Result<Response, Box<dyn Error>> {
+    pub async fn send(&self, request: &Request) -> Result<Response, Box<dyn Error>> {
         let tcp_stream = TcpStream::connect("discord.com:443").await?;
         let tls_stream = self.connector.connect("discord.com".try_into()?, tcp_stream).await?;
 
@@ -59,7 +59,7 @@ impl Client {
             raw_bytes.extend_from_slice(request.body.as_bytes());
             raw_bytes.extend_from_slice(b"\r\n");
             
-            for att in request.files {
+            for att in &request.files {
                 raw_bytes.extend_from_slice(b"--boundary\r\n");
                 raw_bytes.extend_from_slice(att.header.as_bytes());
                 raw_bytes.extend_from_slice(att.data  .as_ref()  );

@@ -1,16 +1,19 @@
-use crate::{napi_map, structs::{file::File, request::{Method, Request}}, FlakeExtension};
+use crate::{FlakeExtension, RimeExtension, structs::*, napi_map_err};
 use super::{client::Client, scheduler::*};
 
 use napi::{bindgen_prelude::*, sys::*, *};
-use tokio::{sync::{mpsc::*}, time::*};
-use kroos::Flake;
+use tokio::{sync::mpsc::*, time::*};
+use kroos::{Flake, Rime};
+use std::sync::Arc;
 
+#[repr(C)]
 pub struct Settings {
     pub authorization: Flake<str>,
     pub user_agent   : Flake<str>,
 }
 
 impl FromNapiValue for Settings {
+    #[inline(always)]
     unsafe fn from_napi_value(env: napi_env, value: napi_value) -> Result<Self> {
         Ok(Settings {
             authorization: Flake::from_napi_object(env, value, "authorization")?,
@@ -20,23 +23,24 @@ impl FromNapiValue for Settings {
 }
 
 impl TypeName for Settings {
+    fn value_type() -> napi::ValueType { napi::ValueType::Object }
     fn type_name() -> &'static str { "object" }
-    fn value_type() -> napi::ValueType {
-        napi::ValueType::Object
-    }
 }
 
 #[napi(js_name = "RST", custom_finalize)]
-pub struct RST { tx: UnboundedSender<Command> }
+#[repr(transparent)]
+pub struct RST { tx: Arc<UnboundedSender<Command>> }
 
 #[napi]
 impl RST {
     #[napi(constructor)]
     pub unsafe fn new(settings: Settings) -> Self {
         let (tx, rx) = unbounded_channel();
-
-        tokio::spawn(async {
-            let mut scheduler = Scheduler::new(rx);
+        let tx = Arc::new(tx);
+        
+        let cloned = tx.clone();
+        tokio::spawn(async move {
+            let mut scheduler = Scheduler::new(cloned, rx);
             scheduler.run(Client::new(settings.authorization, settings.user_agent).unwrap()).await;
         });
         
@@ -54,22 +58,25 @@ impl RST {
     // }
 
     #[napi]
+    #[inline(always)]
     pub fn dispatch(&self, request: Request) -> Result<()> {
-        napi_map!(self.tx.send(Command::Schedule { request, when: Instant::now()} ))?;
+        napi_map_err!(self.tx.send(Command::Schedule { request, when: Instant::now()} ))?;
         Ok(())
     }
 
     #[napi]
+    #[inline(always)]
     pub fn send(&self, env: Env, mut request: Request) -> Result<JsObject> {
         let (deferred, promise) = env.create_deferred()?;
         request.deferred = Some(deferred);
         
-        napi_map!(self.tx.send(Command::Schedule { request, when: Instant::now()} ))?;
+        napi_map_err!(self.tx.send(Command::Schedule { request, when: Instant::now()} ))?;
 
         Ok(promise)
     }
 
     #[napi]
+    #[inline(always)]
     pub fn delete(&self, env: Env, route: JsString, body: Option<JsString>, files: Option<Vec<File>>, reason: Option<JsString>) -> Result<JsObject> {
         let (deferred, promise) = env.create_deferred()?;
 
@@ -78,19 +85,20 @@ impl RST {
             Request {
                 deferred: Some(deferred),
                 method: Method::DELETE, 
-                route : Flake::from_napi(env, route.raw())?,
+                route : Rime::from_napi(env, route.raw())?,
                 reason: reason.map(|reason| Flake::from_napi(env, reason.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 body  : body.map(|body| Flake::from_napi(env, body.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 files : files.unwrap_or_default()
             }
         };
 
-        napi_map!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
+        napi_map_err!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
 
         Ok(promise)
     }
 
     #[napi]
+    #[inline(always)]
     pub fn patch(&self, env: Env, route: JsString, body: Option<JsString>, files: Option<Vec<File>>, reason: Option<JsString>) -> Result<JsObject> {
         let (deferred, promise) = env.create_deferred()?;
 
@@ -98,7 +106,7 @@ impl RST {
         let request = unsafe {
             Request {
                 method: Method::PATCH, 
-                route : Flake::from_napi(env, route.raw())?,
+                route : Rime::from_napi(env, route.raw())?,
                 reason: reason.map(|reason| Flake::from_napi(env, reason.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 body  : body.map(|body| Flake::from_napi(env, body.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 files: files.unwrap_or_default(), 
@@ -106,12 +114,13 @@ impl RST {
             }
         };
 
-        napi_map!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
+        napi_map_err!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
 
         Ok(promise)
     }
 
     #[napi]
+    #[inline(always)]
     pub fn post(&self, env: Env, route: JsString, body: Option<JsString>, files: Option<Vec<File>>, reason: Option<JsString>) -> Result<JsObject> {
         let (deferred, promise) = env.create_deferred()?;
         
@@ -119,7 +128,7 @@ impl RST {
         let request = unsafe {
             Request {
                 method: Method::POST, 
-                route : Flake::from_napi(env, route.raw())?,
+                route : Rime::from_napi(env, route.raw())?,
                 reason: reason.map(|reason| Flake::from_napi(env, reason.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 body  : body.map(|body| Flake::from_napi(env, body.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 files: files.unwrap_or_default(), 
@@ -127,12 +136,13 @@ impl RST {
             }
         };
 
-        napi_map!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
+        napi_map_err!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
 
         Ok(promise)
     }
 
     #[napi]
+    #[inline(always)]
     pub fn put(&self, env: Env, route: JsString, body: Option<JsString>, files: Option<Vec<File>>, reason: Option<JsString>) -> Result<JsObject> {
         let (deferred, promise) = env.create_deferred()?;
 
@@ -140,7 +150,7 @@ impl RST {
         let request = unsafe {
             Request {
                 method: Method::PUT, 
-                route : Flake::from_napi(env, route.raw())?,
+                route : Rime::from_napi(env, route.raw())?,
                 reason: reason.map(|reason| Flake::from_napi(env, reason.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 body  : body.map(|body| Flake::from_napi(env, body.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 files: files.unwrap_or_default(), 
@@ -148,12 +158,13 @@ impl RST {
             }
         };
 
-        napi_map!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
+        napi_map_err!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
 
         Ok(promise)
     }
 
     #[napi]
+    #[inline(always)]
     pub fn get(&self, env: Env, route: JsString, body: Option<JsString>, files: Option<Vec<File>>, reason: Option<JsString>) -> Result<JsObject> {
         let (deferred, promise) = env.create_deferred()?;
         
@@ -161,7 +172,7 @@ impl RST {
         let request = unsafe {
             Request {
                 method: Method::GET, 
-                route : Flake::from_napi(env, route.raw())?,
+                route : Rime::from_napi(env, route.raw())?,
                 reason: reason.map(|reason| Flake::from_napi(env, reason.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 body  : body.map(|body| Flake::from_napi(env, body.raw())).unwrap_or(Ok(Flake::empty()))?, 
                 files: files.unwrap_or_default(), 
@@ -169,7 +180,7 @@ impl RST {
             }
         };
 
-        napi_map!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
+        napi_map_err!(self.tx.send(Command::Schedule { request, when: Instant::now() }))?;
 
         Ok(promise)
     }
@@ -181,8 +192,9 @@ impl RST {
     // }
 
     #[napi]
+    #[inline(always)]
     pub fn shutdown(&self) -> Result<()> {
-        napi_map!(self.tx.send(Command::Shutdown))
+        napi_map_err!(self.tx.send(Command::Shutdown))
     }
 }
 
