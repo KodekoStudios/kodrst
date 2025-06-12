@@ -1,0 +1,20 @@
+# Build and tool files
+tsconfig.json
+rustfmt.toml
+compile.rs
+Cargo.lock
+Cargo.toml
+
+# The Rust source code and compilation targets
+target/
+native/
+
+# Development files and folders
+node_modules/
+test/
+.env
+
+!.npmignore
+!LICENSE.md
+!README.md
+!src/
