@@ -1,18 +1,55 @@
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { dlopen } from "bun:ffi";
 
-import { resolve, join } from "node:path";
-
-function artifact_path() {
+export function artifact_path(): string {
     if (Bun.env.KODRST_ARTIFACT) return Bun.env.KODRST_ARTIFACT;
 
-    if (process.platform === "linux") {
-        switch (process.arch) {
-            case "riscv64": return resolve(join("../artifacts/", "riscv64-linux-gnu.so"));
-            case "arm64"  : return resolve(join("../artifacts/", "aarch64-linux-gnu.so"));
-            case "x64"    : return resolve(join("../artifacts/",     "x64-linux-gnu.so"));
-            case "arm"    : return Bun.env.ARM_VERSION !== "v7" 
-                                        ? resolve(join("../artifacts/",   "arm-linux-gnu.so")) 
-                                        : resolve(join("../artifacts/", "armv7-linux-gnu.so"));
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+
+    switch (process.platform) {
+        case "linux": {
+            switch (process.arch) {
+                case "x64":
+                    return resolve(__dirname, "../artifacts", "x64-linux-gnu.so");
+
+                case "arm64":
+                    return resolve(__dirname, "../artifacts", "aarch64-linux-gnu.so");
+
+                case "arm":
+                    return Bun.env.ARM_VERSION !== "v7"
+                        ? resolve(__dirname, "../artifacts", "arm-linux-gnu.so")
+                        : resolve(__dirname, "../artifacts", "armv7-linux-gnu.so");
+                        
+                case "riscv64":
+                    return resolve(__dirname, "../artifacts", "riscv64-linux-gnu.so");
+
+                // @ts-expect-error
+                case "ppc64le":
+                case "ppc64"  :
+                    return resolve(__dirname, "../artifacts", "ppc64le-linux-gnu.so");
+
+                case "ia32":
+                    return resolve(__dirname, "../artifacts", "x86-linux-gnu.so");
+            }
+            break;
+        }
+
+        case "win32": {
+            switch (process.arch) {
+                case "x64":
+                    return resolve(__dirname, "../artifacts", "x64-windows-gnu.dll");
+
+                // case "ia32":
+                //     return resolve(__dirname, "../artifacts", "x86-windows-gnu.dll");
+                // 
+                // case "arm64":
+                //     return resolve(__dirname, "../artifacts", "aarch64-windows-gnu.dll");
+                // 
+                // case "arm":
+                //     return resolve(__dirname, "../artifacts", "arm-windows-gnu.dll");
+            }
+            break;
         }
     }
 
@@ -68,16 +105,6 @@ export const { symbols } = dlopen(artifact_path(), {
     destructor_request: {
         args: ["pointer"],
         returns: "void"
-    } as const,
-
-    headers_len: {
-        args: ["pointer"],
-        returns: "u8"
-    } as const,
-
-    headers: {
-        args: ["pointer"],
-        returns: "pointer"
     } as const,
 
     destructor_response: {

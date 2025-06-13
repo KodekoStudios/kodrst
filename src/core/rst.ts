@@ -1,5 +1,5 @@
 import { type Pointer, type FFIType, JSCallback, CString, ptr } from "bun:ffi";
-import { symbols, cstring } from "./symbols";
+import { symbols, cstring } from "../symbols";
 import { Response } from "./response";
 
 const registry = new FinalizationRegistry((ptr: Pointer) => symbols.destructor_rst(ptr));

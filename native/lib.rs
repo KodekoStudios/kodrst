@@ -32,7 +32,7 @@ unsafe impl<T> Send for Ptr<T> {}
 unsafe impl<T> Sync for Ptr<T> {}
 
 #[inline(always)]
-pub(crate) unsafe fn leak_as_cstr(s: &str) -> &'static str {
+pub(crate) unsafe fn leak_as_cstr(s: &str) -> *const c_char {
     use std::alloc::*;
     use std::ptr::*;
 
@@ -42,7 +42,7 @@ pub(crate) unsafe fn leak_as_cstr(s: &str) -> &'static str {
     copy_nonoverlapping(s.as_ptr(), raw_cstr, len);
     *raw_cstr.add(len) = 0;
 
-    &*from_raw_parts(raw_cstr, len + 1)
+    raw_cstr.cast::<c_char>()
 }
 
 #[inline(always)]

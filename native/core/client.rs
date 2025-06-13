@@ -151,11 +151,13 @@ impl Client {
 
         let body = leak_as_cstr(String::from_utf8_unchecked(bytes).as_str());
         
-        let raw_headers = alloc(Layout::array::<Header>(headers.len()).unwrap()).cast::<Header>();
-        for (i, aahc::Header { name, value }) in headers.iter().enumerate() {
+        let raw_headers = alloc(Layout::array::<Header>(resp_meta.headers.len()).unwrap()).cast::<Header>();
+        for (i, aahc::Header { name, value }) in resp_meta.headers.iter().enumerate() {
+            let value = std::str::from_utf8(value).unwrap_or_default();
+
             *raw_headers.add(i) = Header {
-                value: (value.len() as u32, leak_as_cstr(transmute(*value)).as_ptr()),
-                name : (name .len() as u8 , leak_as_cstr(           name  ).as_ptr()),
+                name : leak_as_cstr(name ),
+                value: leak_as_cstr(value),
             };
         }
 
@@ -164,10 +166,9 @@ impl Client {
         write(
             raw_response,
             Response {
-                headers: (headers.len() as u8, raw_headers),
-                body   : (body.len() as u32, body.as_ptr()),
+                headers: (resp_meta.headers.len() as u8, raw_headers),
                 status : resp_meta.status,
-                _pad   : [0; 6]
+                body   : body,
             }
         );
 

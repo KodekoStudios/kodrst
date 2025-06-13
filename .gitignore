@@ -135,6 +135,9 @@ $RECYCLE.BIN/
 /target
 Cargo.lock
 
+/test
+/lib
+
 .pnp.*
 .yarn/*
 !.yarn/patches

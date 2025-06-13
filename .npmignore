@@ -10,11 +10,13 @@ target/
 native/
 
 # Development files and folders
+rollup.config.mjs
 node_modules/
 test/
+src/
 .env
 
 !.npmignore
 !LICENSE.md
 !README.md
-!src/
+!lib/
