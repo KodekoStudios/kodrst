@@ -1,35 +1,42 @@
 {
-  "name": "kodrst",
-  "type": "module",
-  "version": "0.1.5-f",
+  "name"   : "kodrst"       ,
+  "type"   : "module"       ,
+  "version": "0.1.6"        ,
   "license": "AGPL-3.0-only",
+
   "scripts": {
-    "build:cargo": "cargo run compile",
     "build:rollup": "rollup -c",
-    "build": "bun run build:cargo && bun run build:rollup"
+    "build:cargo" : "cargo run compile",
+    "build"       : "bun run build:cargo && bun run build:rollup"
   },
-  "main": "./lib/index.js",
+
+  "main" : "./lib/index.js"  ,
   "types": "./lib/index.d.ts",
   "exports": {
+    "./macros": "./macros.ts",
     ".": {
-      "default": "./lib/index.js",
-      "types": "./lib/index.d.ts"
-    },
-    "./macros": "./macros.ts"
+      "default": "./lib/index.js"  ,
+      "types"  : "./lib/index.d.ts"
+    }
   },
+
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-typescript": "^12.1.2",
     "@types/bun": "latest",
-    "mitata": "^1.0.34",
-    "rollup": "^4.43.0",
-    "rollup-plugin-dts": "^6.2.1",
-    "tslib": "^2.8.1"
+
+    "@rollup/plugin-node-resolve": "16.0.1",
+    "@rollup/plugin-typescript"  : "12.1.2",
+    "rollup-plugin-dts"          : "6.2.1" ,
+
+    "rollup": "4.43.0",
+    "mitata": "1.0.34",
+    "tslib" : "2.8.1"
   },
+
   "peerDependencies": {
     "typescript": "^5",
     "bun": "^1.2"
   },
+
   "engines": {
     "bun": ">=1.2.0"
   }
